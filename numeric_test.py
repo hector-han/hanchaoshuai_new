@@ -1,4 +1,5 @@
-from C import NumberRes
+from calc_c import NumberRes
+from mesh_grid import MeshGrid
 import matplotlib.pyplot as plt
 import numpy as np
 import mpl_toolkits.mplot3d
@@ -21,14 +22,22 @@ l = 0.001
 
 
 if __name__ == '__main__':
-    solver = NumberRes(Q, location, D, v, vd, I, l)
-
+    # solver = NumberRes(Q, location, D, v, vd, I, l)
+    #
     x1 = np.linspace(0, 10, 50)
     y1 = np.linspace(0, 10, 50)
-    z1 = [3]
+    # z1 = [3]
     xx, yy = np.meshgrid(x1, y1, indexing='ij')
+    # t = np.linspace(0, 10, 400)
+    # solver.init(x1, y1, z1, t)
+    solver = NumberRes(Q, location, D, v, vd, I, l)
+
+    lower = [0, 0, 3]
+    upper = [10, 10, 3]
+    nums = [50, 50, 1]
+    mesh_grid = MeshGrid(lower, upper, nums)
     t = np.linspace(0, 10, 400)
-    solver.init(x1, y1, z1, t)
+    solver.init(mesh_grid, t)
     solver.process()
     value = solver.view[-1][:, :, 0]
     print(xx.shape, yy.shape, value.shape)

@@ -1,4 +1,5 @@
-from D import DMatrix
+from calc_d import DMatrix
+from mesh_grid import MeshGrid
 import numpy as np
 
 
@@ -15,10 +16,15 @@ if __name__ == '__main__':
     x1 = np.linspace(0, 10, 11)
     y1 = np.linspace(0, 10, 11)
     z1 = [3]
-    xx, yy = np.meshgrid(x1, y1, indexing='ij')
+    t = [0.1 * ele for ele in range(10)]
 
-    solver.init(x1, y1, z1, t)
-    solver.build_D()
+    lower = [0, 0, 3]
+    upper = [10, 10, 3]
+    nums = [11, 11, 1]
+    mesh_grid = MeshGrid(lower, upper, nums)
+
+    solver.init(mesh_grid, t)
+    solver.build_Dt()
 
     # location 是n个观测源的位置， n*3的矩阵
     location = np.array([
@@ -27,5 +33,5 @@ if __name__ == '__main__':
     ])
     D1 = solver.get_D1(location)
 
-    print('D shape=', solver.D.shape)
+    print('Dt shape=', solver.DT.shape)
     print('D1 =', D1)
