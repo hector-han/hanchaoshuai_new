@@ -54,6 +54,24 @@ class OptTarget:
         return np.array(ans)
 
     def get_gradient(self):
-        nums = len(self.matD.location)
-        return np.random.randn(nums)
+        """
+        计算梯度
+        :return:
+        """
+        c_at_0 = self._calc_c(0)
+        ### 计算 grad_b ###
+        inv_b = np.linalg.inv(self.matB)
+        sum_item = np.sum(c_at_0) - self.cb
+        grad_b = np.matmul(inv_b, sum_item)
+
+        ### 计算grad_r ###
+        inv_r = np.linalg.inv(self.matR)
+        grad_r = np.zeros_like(self.cb)
+        for t in range(self.T):
+            c_at_t = self._calc_c(t)
+            item_1 = np.matmul(self.D1.T, inv_r)
+            itme_2 = 0
+            grad_r = grad_r + 0
+
+        return None
 

@@ -2,23 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a368d544-5210-4900-9236-60db46251f65" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/calc_b.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/calc_c.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/calc_d.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/fpa/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/fpa/fpa.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/fpa/utils.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/opt_target.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/test_matrix.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/hanchaoshuai_new.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/hanchaoshuai_new.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/D_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/D_test.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/numeric_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/numeric_test.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/mesh_grid.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mesh_grid.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/test.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/test_mesh_grid.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_mesh_grid.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/opt_target.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/opt_target.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
