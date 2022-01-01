@@ -3,6 +3,7 @@
 """
 import math
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams['font.sans-serif']=['SimHei']
 
@@ -42,7 +43,21 @@ def plot_scatter(x, y, labels):
         plt.annotate(labels[i], xy=[x[i], y[i]], xytext=(x[i]+0.1, y[i]+0.1))
     plt.show()
 
-if __name__ == '__main__':
+
+def load_observe(file_path):
+    df = pd.read_excel(file_path)
+    time_series = {}
+    for i, row in df.iterrows():
+        s = row['样品编号']
+        time = int(row['时间']) * 60
+        value = float(row['浓度'])
+        if time not in time_series:
+            time_series[time] = []
+        time_series[time].append((s, value))
+    return time_series
+
+
+def main1():
     file_path = './数据.xlsx'
     df = load_station(file_path)
     print(df)
@@ -56,3 +71,25 @@ if __name__ == '__main__':
         x.append(v[0])
         y.append(v[1])
     plot_scatter(x, y, label)
+
+def build_data(f1, f2):
+    station_to_xy = load_station(f1)
+    time_series = load_observe(f2)
+    ans = {}
+    for time in time_series:
+        lst_value = time_series[time]
+        tmp = []
+        for label, val in lst_value:
+            xy = station_to_xy[label]
+            xyv = [xy[0], xy[1], val]
+            tmp.append(xyv)
+        ans[time] = np.asarray(tmp)
+
+    return ans
+
+if __name__ == '__main__':
+    station_file = '数据.xlsx'
+    guance_file = './观测数据.xlsx'
+    data = build_data(station_file, guance_file)
+    for k, v in data.items():
+        print(k, v)
