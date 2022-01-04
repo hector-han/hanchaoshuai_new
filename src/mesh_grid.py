@@ -66,6 +66,8 @@ class MeshGrid:
         grid_idx = self.nearest_grid_idx(point)
         return self.to_flaten_idx(grid_idx)
 
+    def get_point_by_grid(self, idxs):
+        return self._lower + np.asarray(idxs) * self.steps
 
 
 

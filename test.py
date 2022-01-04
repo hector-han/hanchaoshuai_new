@@ -7,25 +7,25 @@ import xlsxwriter
 
 # [x, y, z]
 location = np.array([
-    [2, 2, 3],
-    [5, 5, 3],
+    [2.1, 2.1, 3],
+    [5.1, 5.1, 3],
 ])
 
 Q = np.array([3., 5.])  # mass emitted per unit time 单位时间内发射的质量
-D = np.array([0.3, 0.35, 0.10])
-v = np.array([0.25, 0.13, 0.20])
-vd = 0.002
-I = 3.6
-l = 0.001
+u = 5
+theta = np.pi / 4
+vd = 0
+I = 0
+l = 0
 
 
 if __name__ == '__main__':
-    t = 1
+    t = 10
 
-    analysis = AnalysisRes(Q, location, D, v, vd, I, l)
+    analysis = AnalysisRes(Q, location, u, theta, vd, I, l)
 
-    x1 = np.linspace(0,10, 100)
-    y1 = np.linspace(0,10, 100)
+    x1 = np.linspace(0,50, 100)
+    y1 = np.linspace(0,50, 100)
     xx, yy = np.meshgrid(x1, y1, indexing='ij')
 
     #求解网格各点浓度值，存入data文件
@@ -52,7 +52,7 @@ if __name__ == '__main__':
             worksheet.write(k, 1, y)  # 向第二行第二例写入j
             worksheet.write(k, 2, C[id_i, id_j])  # 向第二行第二例写入z[i,j]
             k += 1
-    print(max(analysis.tmp))
+    # print(max(analysis.tmp))
     workbook.close()
 
 #画三维图

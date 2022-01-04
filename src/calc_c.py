@@ -4,18 +4,27 @@
 import numpy as np
 from scipy import integrate
 from mesh_grid import MeshGrid
+from ksxi import calc_sigma
+
+
+def accum_sum(func, start, end):
+    val = 0
+    for t in range(start, end):
+        val += func(t)
+    return val
 
 
 class AnalysisRes:
-    def __init__(self, Q, location, D, v, vd, I, l):
+    def __init__(self, Q, location, u, theta, vd, I, l):
         # n维向量，n个扩散源的强度
         self.Q = Q
         # n * 3 维向量， n个源的坐标
         self.location = location
         # 3维度向量，x,y,z方向的大气扩散系数
-        self.D = D
-        # v 对流速度, 3维向量
-        self.v = v
+        self.u = u
+        self.theta = theta
+        self.calc_sigma = calc_sigma
+        self.v = self.u * np.asarray([np.cos(theta), np.sin(theta), 0])
         # vd, 一个数，沉积速率。以下都是标量
         self.vd = vd
         self.I = I
@@ -23,7 +32,7 @@ class AnalysisRes:
         # 记录一些中间值，方便定位
         self.tmp = []
 
-    def _f(self, i, point, t, coeff=1):
+    def _f(self, i, point, t, sigma_i, coeff=1):
         """
         给定xyz, t, 以及对t的扰动tao, 求里面函数的值。 tao 属于 [0, t]
         :param i: 源的下标
@@ -36,9 +45,9 @@ class AnalysisRes:
         vt = self.v * t
 
         numer = point - loc_i - vt
-        demoni = self.D * t
-        sum1 = - np.sum(numer * numer / demoni) / 4 - (self.vd + self.I * self.l) * t
-        c1 = coeff * np.exp(sum1) / np.power(t, 3 / 2)
+        demoni = sigma_i * sigma_i
+        sum1 = - np.sum(numer * numer / demoni) / 2 - (self.vd + self.I * self.l) * t
+        c1 = coeff * np.exp(sum1)
         return c1
 
     # def my_quad(self):
@@ -52,16 +61,19 @@ class AnalysisRes:
         ret = 0
         n = len(self.Q)
         for i in range(n):
-            c1 = self._f(i, point, t)
+            loc_i = self.location[i]
+            sigma_i = self.calc_sigma(point, loc_i, self.u, self.theta)
+            c1 = self._f(i, point, t, sigma_i)
 
             def f(tao):
-                return self._f(i, point, tao, t - tao)
+                return self._f(i, point, tao, sigma_i)
 
             c2, err = integrate.quad(f, 0, t)
+            # c2 = accum_sum(f, 1, t + 1)
             self.tmp.append(c2)
-            ret += np.sqrt(np.pi) * self.Q[i] * (c1 + c2)
+            ret += self.Q[i] * (c1 + c2) / np.prod(sigma_i) / np.power((2 * np.pi), 3 / 2)
 
-        return ret / (2 * np.sqrt(np.prod(self.D)))
+        return ret
 
 
 class NumberRes:
