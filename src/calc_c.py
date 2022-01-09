@@ -24,7 +24,7 @@ class AnalysisRes:
         self.u = u
         self.theta = theta
         self.calc_sigma = calc_sigma
-        self.v = self.u * np.asarray([np.cos(theta), np.sin(theta), 0])
+        self.v = self.u * np.asarray([np.cos(theta), np.sin(theta)])
         # vd, 一个数，沉积速率。以下都是标量
         self.vd = vd
         self.I = I

@@ -37,7 +37,7 @@ def calc_sigmas(u,theta, x, y, x_i, y_i):
     s_y = (sigmas_y) * np.sin(theta)
     s_x = (sigmas_y) * np.cos(theta)
 
-    return np.array([s_x, s_y, s_z])
+    return np.array([s_x, s_y])
 
 
 def calc_sigma(point, loc_i, u, theta):

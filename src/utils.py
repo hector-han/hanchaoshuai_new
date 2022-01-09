@@ -1,11 +1,13 @@
 """
 1 经纬度转墨卡托
 """
+import logging
 import math
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams['font.sans-serif']=['SimHei']
+
 
 def lnglat_to_mercator(lng, lat):
     """
@@ -45,16 +47,22 @@ def plot_scatter(x, y, labels):
 
 
 def load_observe(file_path):
+    """
+    返回dict, t->station->value
+    tuple: (采样站， 值)
+    """
     df = pd.read_excel(file_path)
     time_series = {}
+    all_station = set()
     for i, row in df.iterrows():
         s = row['样品编号']
+        all_station.add(s)
         time = int(row['时间']) * 60
         value = float(row['浓度'])
         if time not in time_series:
-            time_series[time] = []
-        time_series[time].append((s, value))
-    return time_series
+            time_series[time] = {}
+        time_series[time][s] = value
+    return time_series, list(all_station)
 
 
 def main1():
@@ -72,24 +80,40 @@ def main1():
         y.append(v[1])
     plot_scatter(x, y, label)
 
+
 def build_data(f1, f2):
     station_to_xy = load_station(f1)
-    time_series = load_observe(f2)
-    ans = {}
+    time_series, all_station = load_observe(f2)
+    logging.info(f'总共有{len(all_station)}个采样点')
+
+    obsrv_loc = []
+    for station in all_station:
+        loc = station_to_xy[station]
+        obsrv_loc.append(loc)
+        logging.info(f'采样点：{station}, 坐标：{loc}')
+    obsrv_loc = np.asarray(obsrv_loc)
+
+    yt = {}
     for time in time_series:
         lst_value = time_series[time]
         tmp = []
-        for label, val in lst_value:
-            xy = station_to_xy[label]
-            xyv = [xy[0], xy[1], val]
-            tmp.append(xyv)
-        ans[time] = np.asarray(tmp)
+        for station in all_station:
+            if station in lst_value:
+                val = lst_value[station]
+                tmp.append(val)
+            else:
+                tmp.append(1e-13)
 
-    return ans
+        yt[time] = np.asarray(tmp)
+
+    return obsrv_loc, yt
+
 
 if __name__ == '__main__':
-    station_file = '数据.xlsx'
-    guance_file = './观测数据.xlsx'
-    data = build_data(station_file, guance_file)
-    for k, v in data.items():
-        print(k, v)
+    # logging.basicConfig(level=logging.INFO)
+    # station_file = '数据.xlsx'
+    # guance_file = './观测数据.xlsx'
+    # obsrv_loc, yt = build_data(station_file, guance_file)
+    # print(obsrv_loc)
+    # print(yt)
+    main1()

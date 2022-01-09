@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 from mesh_grid import MeshGrid
 from ksxi import calc_sigma
@@ -29,7 +31,7 @@ class DMatrix:
         :return:
         """
         xlen, ylen = self._mesh_grid.nums[0:2]
-        ij_to_sigma = np.zeros([xlen, ylen, 3])
+        ij_to_sigma = np.zeros([xlen, ylen, 2])
         for i in range(xlen):
             for j in range(ylen):
                 point = self._mesh_grid.get_point_by_grid([i, j])
@@ -44,9 +46,8 @@ class DMatrix:
     def init(self, mesh_grid: MeshGrid, grid_t):
         """
         初始化网格
-        :param grid_x:
-        :param grid_y:
-        :param grid_z:
+        :param mesh_grid 平面网格
+        :param grid_t 时间维度的划分
         :return:
         """
         self._mesh_grid = mesh_grid
@@ -86,59 +87,34 @@ class DMatrix:
 
     def build_Dt(self):
         xlen, ylen = self._mesh_grid.nums[0:2]
+        # 每一个时刻的D都是不一样的
         t_to_D = {}
         for t in self.grid_t:
             D_at_t = np.zeros([self._mesh_grid.total_M, self._mesh_grid.total_M])
             for i in range(xlen):
                 for j in range(ylen):
-                    if None:
-                        pass
-                        # zlen = self._mesh_grid.nums[2]
-                        # for k in range(zlen):
-                        #     # 每个方向上的小的和大的
-                        #     row_idx = self._mesh_grid.to_flaten_idx([i, j, k])
-                        #     if i > 0:
-                        #         col_idx = self._mesh_grid.to_flaten_idx([i - 1, j, k])
-                        #         self.DT[row_idx, col_idx] = self.b[0]
-                        #     if j > 0:
-                        #         col_idx = self._mesh_grid.to_flaten_idx([i, j - 1, k])
-                        #         self.DT[row_idx, col_idx] = self.b[1]
-                        #     if k > 0:
-                        #         col_idx = self._mesh_grid.to_flaten_idx([i, j, k - 1])
-                        #         self.DT[row_idx, col_idx] = self.b[2]
-                        #
-                        #     if i < xlen - 1:
-                        #         col_idx = self._mesh_grid.to_flaten_idx([i + 1, j, k])
-                        #         self.DT[row_idx, col_idx] = self.pxyz[0]
-                        #     if j < ylen - 1:
-                        #         col_idx = self._mesh_grid.to_flaten_idx([i, j + 1, k])
-                        #         self.DT[row_idx, col_idx] = self.pxyz[1]
-                        #     if k < zlen - 1:
-                        #         col_idx = self._mesh_grid.to_flaten_idx([i, j, k + 1])
-                        #         self.DT[row_idx, col_idx] = self.pxyz[2]
-                    else:
-                        row_idx = self._mesh_grid.to_flaten_idx([i, j])
-                        pxyz, a, bxyz = self._calc_ab(i, j, t)
-                        D_at_t[row_idx, row_idx] = a
-                        if i > 0:
-                            col_idx = self._mesh_grid.to_flaten_idx([i - 1, j])
-                            D_at_t[row_idx, col_idx] = bxyz[0]
-                        if j > 0:
-                            pxyz, a, bxyz = self._calc_ab(i - 1, j, t)
-                            col_idx = self._mesh_grid.to_flaten_idx([i, j - 1])
-                            D_at_t[row_idx, col_idx] = bxyz[1]
-                        if i < xlen - 1:
-                            col_idx = self._mesh_grid.to_flaten_idx([i + 1, j])
-                            D_at_t[row_idx, col_idx] = pxyz[0]
-                        if j < ylen - 1:
-                            col_idx = self._mesh_grid.to_flaten_idx([i, j + 1])
-                            D_at_t[row_idx, col_idx] = pxyz[1]
+                    row_idx = self._mesh_grid.to_flaten_idx([i, j])
+                    pxyz, a, bxyz = self._calc_ab(i, j, t)
+                    D_at_t[row_idx, row_idx] = a
+                    if i > 0:
+                        col_idx = self._mesh_grid.to_flaten_idx([i - 1, j])
+                        D_at_t[row_idx, col_idx] = bxyz[0]
+                    if j > 0:
+                        pxyz, a, bxyz = self._calc_ab(i - 1, j, t)
+                        col_idx = self._mesh_grid.to_flaten_idx([i, j - 1])
+                        D_at_t[row_idx, col_idx] = bxyz[1]
+                    if i < xlen - 1:
+                        col_idx = self._mesh_grid.to_flaten_idx([i + 1, j])
+                        D_at_t[row_idx, col_idx] = pxyz[0]
+                    if j < ylen - 1:
+                        col_idx = self._mesh_grid.to_flaten_idx([i, j + 1])
+                        D_at_t[row_idx, col_idx] = pxyz[1]
             t_to_D[t] = D_at_t
         self.t_to_D = t_to_D
 
     def set_obsrv_location(self, obsrv_location):
         """
-        设置源的位置, 顺便计算下每个源相对距离
+        设置源的位置, 顺便计算下每个源相对距离，后续会用到
         :param location:
         :return:
         """
@@ -160,7 +136,7 @@ class DMatrix:
 
     def get_slice(self, D_mat):
         """
-        获取矩阵的slice
+        获取矩阵的slice, 是按照观测点的位置
         :param D_mat:
         :return:
         """
@@ -183,5 +159,17 @@ class DMatrix:
         """
         D_mat = np.eye(self._mesh_grid.total_M)
         for t in self.grid_t:
+            D_mat = np.matmul(D_mat, self.t_to_D[t])
+        return self.get_slice(D_mat)
+
+    def get_partial_D(self, list_t):
+        """
+        从list_t中获取对应时刻的Dt, 连乘起来，返回观测点index的子矩阵
+        :param list_t:
+        :return:
+        """
+        logging.info(list_t)
+        D_mat = np.eye(self._mesh_grid.total_M)
+        for t in list_t:
             D_mat = np.matmul(D_mat, self.t_to_D[t])
         return self.get_slice(D_mat)

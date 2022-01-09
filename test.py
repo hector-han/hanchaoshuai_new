@@ -7,8 +7,8 @@ import xlsxwriter
 
 # [x, y, z]
 location = np.array([
-    [2.1, 2.1, 3],
-    [5.1, 5.1, 3],
+    [2.1, 2.1],
+    [5.1, 5.1],
 ])
 
 Q = np.array([3., 5.])  # mass emitted per unit time 单位时间内发射的质量
@@ -43,7 +43,7 @@ if __name__ == '__main__':
             x = xx[id_i, id_j]
             y = yy[id_i, id_j]
 
-            xyz = np.array([x, y, z])
+            xyz = np.array([x, y])
 
             C[id_i, id_j] = analysis.at(xyz, t)
             # print(C[id_i, id_j], x, y)
