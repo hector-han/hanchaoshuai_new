@@ -23,9 +23,12 @@ class Config(object):
         self.l = 0
 
         # 空间网格
-        lower = [-660, -420]
-        upper = [220, 840]
-        nums = [101, 101]
+        lower = [-1000, -1000]
+        upper = [1000, 1000]
+        nums = [51, 51]
+        self.mesh_grid = MeshGrid(lower, upper, nums)
+        # t的划分网格， 计算D时用到
+        self.grid_t = list(range(1, 301))
         self.mesh_grid = MeshGrid(lower, upper, nums)
         # t的划分网格， 计算D时用到
         self.grid_t = list(range(1, 301))

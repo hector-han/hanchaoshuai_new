@@ -90,13 +90,13 @@ class OptTarget:
         inv_r = np.linalg.inv(self.matR)
         grad_r = np.zeros_like(self.cb)
         t_to_ct = {}
-        t_idx = self.t_idx + [self.T]
+        t_idx = self.t_idx
         for t in t_idx:
             c_at_t = self._calc_c(t)
             logging.info(f't={t}, c={c_at_t}')
             t_to_ct[t] = c_at_t
             # 这里的T是转置还是最长时间？？？
-            list_t = list(range(0, t + 1))
+            list_t = list(range(1, t + 1))
             D = self.matD.get_partial_D(list_t)
             item_1 = np.matmul(D.T, self.matH)
             item_1 = np.matmul(item_1, inv_r)
@@ -107,7 +107,7 @@ class OptTarget:
         #### 计算目标函数
         item1 = quad_multiply(inv_b, c0_sub_cb) / 2
         item2 = 0
-        for t in range(self.T):
+        for t in t_idx:
             hct_sub_yt = np.dot(self.matH, t_to_ct[t]) - self.yt[t]
             tmp = quad_multiply(inv_r, hct_sub_yt)
             item2 += tmp
