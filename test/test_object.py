@@ -41,8 +41,8 @@ def main():
     station_fn = '../src/数据.xlsx'
     guance_fn = '../src/观测数据.xlsx'
     obsrv_loc, yt = build_data(station_fn, guance_fn)
-    tmp = np.asarray([yt[60], yt[180], yt[300]])
-    logging.info(tmp.T)
+    # tmp = np.asarray([yt[60], yt[180], yt[300]])
+    # logging.info(tmp.T)
     config = Config()
     num_obsrv = obsrv_loc.shape[0]
     matR = np.eye(num_obsrv)

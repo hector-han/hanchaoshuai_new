@@ -46,10 +46,14 @@ class OptTarget:
         logging.info(f'T: {self.T}')
         logging.info(f't_idx: {self.t_idx}')
 
-    def reset(self, config):
-
-        cSolver = AnalysisRes(config.Q, config.location, config.u, config.theta, config.vd, config.I, config.l)
-        self.cSolver = cSolver
+    def reset(self, config, c_at_t):
+        """
+        重置源的位置，源强，等的值
+        :param config:
+        :param c_at_t:
+        :return:
+        """
+        self.c_at_t = c_at_t
 
         matD = DMatrix(config.location, config.u, config.theta, config.vd, config.I, config.l)
         matD.init(self.mesh_grid, config.grid_t)
@@ -57,30 +61,20 @@ class OptTarget:
         matD.set_obsrv_location(self.obsrv_loc)
         self.matD = matD
         self.matD1 = matD.get_D1()
-        logging.info(f'matD1={self.matD1}')
+        logging.debug(f'matD1={self.matD1}')
 
         # y_10和y_20是什么
         matB = BMatrix(matD, self.yt, self.t_idx, self.T)
         self.matB = matB.build()
-        logging.info(f'matB={self.matB}')
+        logging.debug(f'matB={self.matB}')
 
-    def _calc_c(self, t):
-        """
-        计算t时刻的c的值
-        :param t:
-        :return:
-        """
-        ans = []
-        for point in self.matD.obsrv_location:
-            ans.append(self.cSolver.at(point, t))
-        return np.array(ans)
 
     def get_obj_and_grad(self):
         """
         计算梯度
         :return:
         """
-        c_at_0 = self._calc_c(0)
+        c_at_0 = self.c_at_t[0]
         ### 计算 grad_b ###
         inv_b = np.linalg.inv(self.matB)
         c0_sub_cb = c_at_0 - self.cb
@@ -92,8 +86,8 @@ class OptTarget:
         t_to_ct = {}
         t_idx = self.t_idx
         for t in t_idx:
-            c_at_t = self._calc_c(t)
-            logging.info(f't={t}, c={c_at_t}')
+            c_at_t = self.c_at_t[t]
+            logging.debug(f't={t}, c={c_at_t}')
             t_to_ct[t] = c_at_t
             # 这里的T是转置还是最长时间？？？
             list_t = list(range(1, t + 1))

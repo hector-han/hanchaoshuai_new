@@ -82,11 +82,12 @@ def random_point_init(num_of_points: int, lb: np.ndarray, ub: np.ndarray) -> np.
     return init_points
 
 
-def deb_feasible_compare(xs, obj_fun_and_less_cons):
+def deb_feasible_compare(xs, obj_fun_and_obser, less_fun):
     """
     对于极小化问题，使用deb 可行性比较法判断解的优先级
     :param xs: 一系列待确定的解
-    :param obj_fun_and_less_cons: 目标函数和约束
+    :param obj_fun_and_obser: 目标函数和其他观测数据
+    :param less_fun
     :return: xs中最优解的下标， 最优值， 是否满足约束
     """
     delta = 1e-4
@@ -94,8 +95,15 @@ def deb_feasible_compare(xs, obj_fun_and_less_cons):
     phis = []
     _comparator = []
 
-    obj_and_cons_vals = [obj_fun_and_less_cons(x) for x in xs]
+    obj_and_obsrv_vals = [obj_fun_and_obser(x) for x in xs]
+    obj_vals = [item[0: 1] for item in obj_and_obsrv_vals]
+    obsrv_vals = [item[1:] for item in obj_and_obsrv_vals]
+    less_vals = [less_fun(x) for x in xs]
+
+    nums = len(obj_vals)
+    obj_and_cons_vals = [obj_vals[i] + less_vals[i] for i in range(nums)]
     obj_and_cons_vals = np.asarray(obj_and_cons_vals)
+
     _shape = obj_and_cons_vals.shape
     max_val = max(obj_and_cons_vals[:, 0])
     _flag = False
@@ -118,4 +126,4 @@ def deb_feasible_compare(xs, obj_fun_and_less_cons):
     indices = list(range(len(xs)))
     sorted_indices = sorted(indices, key=lambda i: _comparator[i])
     opt_idx = sorted_indices[0]
-    return opt_idx, obj_and_cons_vals[opt_idx], _flag
+    return opt_idx, obj_and_cons_vals[opt_idx], _flag, obsrv_vals[opt_idx]

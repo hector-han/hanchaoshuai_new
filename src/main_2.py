@@ -1,3 +1,7 @@
+"""
+误差修正版本
+"""
+
 import numpy as np
 import logging
 from mesh_grid import MeshGrid
@@ -7,6 +11,7 @@ from opt_target import OptTarget
 import sys
 sys.path.append('../src')
 from utils import build_data
+from fix_error import get_miu_sigam
 
 
 # xy 维度上的最小值
@@ -74,6 +79,21 @@ def compute_c(config: Config, obsrv_loc, yt):
             loc = obsrv_loc[i]
             tmp[i] = c_solver.at(loc, t)
         ans[t] = np.asarray(tmp)
+
+    mat_m_s = get_miu_sigam(obsrv_loc, yt, ans)
+    t_len = len(t_idx)
+    errors = []
+    for miu, sigma in mat_m_s:
+        res = np.random.lognormal(miu, sigma, [t_len])
+        errors.append(res)
+
+    # 修正下ans:
+    for ti, t in enumerate(t_idx):
+        for j in range(obsrv_nums):
+            eps = errors[j][ti]
+            logging.info(f'误差={eps}')
+            ans[t][j] = (1 + eps) * ans[t][j]
+
     return ans
 
 
@@ -110,7 +130,7 @@ def assum_num_source(obsrv_loc, yt, nums=2):
         c_at_t = compute_c(config, obsrv_loc, yt)
         target_obj.reset(config, c_at_t)
         val, grad = target_obj.get_obj_and_grad()
-        return [val, np.linalg.norm(grad)]
+        return [np.linalg.norm(grad), val]
 
     save_file = '0115实验.tsv'
     fpa_obj = FlowerPollinationAlgorithm(ndim, target_func, lower, upper, num_popu=10, N_iter=100,
@@ -122,8 +142,8 @@ def process():
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s [%(filename)s:%(lineno)d] %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
-    station_fn = '观测点坐标.xlsx'
-    guance_fn = '观测点数据.xlsx'
+    station_fn = '../src/数据.xlsx'
+    guance_fn = '../src/观测数据.xlsx'
     obsrv_loc, yt = build_data(station_fn, guance_fn)
     assum_num_source(obsrv_loc, yt, nums=2)
 
