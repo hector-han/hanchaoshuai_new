@@ -24,12 +24,12 @@ xy_lower = [-1000, -1000]
 xy_upper = [1000, 1000]
 # xy维度网格的个数
 xy_nums = [51, 51]
-# 时间维度网格, 1,2,3,...300
-grid_t = list(range(10, 301, 10))
+# 时间维度网格, 100， 200， 300， ..., 3600
+grid_t = list(range(100, 3601, 100))
 # 计算B的三个时间
-tb_idx = [60, 180, 300]
-# 计算目标函数的多个时间
-tj_idx = [60, 180, 300]
+tb_idx = [100, 200, 300]
+# 计算目标函数的多个时间，
+tj_idx = list(range(100, 3601, 200))
 # 源强最小值
 Q_min = 0
 # 源强最大值
@@ -123,7 +123,7 @@ def assum_num_source(obsrv_loc, yt, nums=2):
         f_val, grad = target_obj.get_obj_and_grad()
         return [f_val, np.linalg.norm(grad)]
 
-    save_file = '0115实验.tsv'
+    save_file = '0122_实验_大数据.tsv'
     fpa_obj = FlowerPollinationAlgorithm(ndim, target_func, lower, upper, num_popu=10, N_iter=100,
                                          int_method='random', save_path=save_file)
     fpa_obj.train()
@@ -133,8 +133,8 @@ def process():
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s [%(filename)s:%(lineno)d] %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
-    station_fn = '观测点坐标.xlsx'
-    guance_fn = '观测点数据.xlsx'
+    station_fn = '../data/2021-1/观测点坐标-1.xlsx'
+    guance_fn = '../data/2021-1/观测点数据-1.xlsx'
     obsrv_loc, yt = build_data(station_fn, guance_fn)
     assum_num_source(obsrv_loc, yt, nums=2)
 

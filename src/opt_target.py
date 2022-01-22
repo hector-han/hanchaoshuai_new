@@ -4,7 +4,6 @@ import numpy as np
 from mesh_grid import MeshGrid
 from calc_d import DMatrix
 from calc_b import BMatrix
-from calc_c import AnalysisRes
 
 
 def quad_multiply(mat, vector):
@@ -19,7 +18,7 @@ def quad_multiply(mat, vector):
 
 
 class OptTarget:
-    def __init__(self, mesh_grid: MeshGrid, matR, obsrv_loc, yt, T, t_idx, cb):
+    def __init__(self, mesh_grid: MeshGrid, matR, obsrv_loc, yt, tb_idx, tj_idx, cb):
         """
 
         :param matD:
@@ -39,12 +38,12 @@ class OptTarget:
         self.matH = np.eye(n)
         self.obsrv_loc = obsrv_loc
         self.yt = yt
-        self.T = T
-        self.t_idx = t_idx
+        self.tb_idx = tb_idx
+        self.tj_idx = tj_idx
         self.cb = cb
         # logging.info(f'yt: {self.yt}')
-        logging.info(f'T: {self.T}')
-        logging.info(f't_idx: {self.t_idx}')
+        logging.info(f'tb_idx: {self.tb_idx}')
+        logging.info(f'tj_idx: {self.tj_idx}')
 
     def reset(self, config, c_at_t):
         """
@@ -63,8 +62,8 @@ class OptTarget:
         self.matD1 = matD.get_D1()
         logging.debug(f'matD1={self.matD1}')
 
-        # y_10和y_20是什么
-        matB = BMatrix(matD, self.yt, self.t_idx, self.T)
+        delta_t = config.grid_t[1] - config.grid_t[0]
+        matB = BMatrix(matD, self.yt, self.tb_idx, delta_t)
         self.matB = matB.build()
         logging.debug(f'matB={self.matB}')
 
@@ -84,14 +83,16 @@ class OptTarget:
         inv_r = np.linalg.inv(self.matR)
         grad_r = np.zeros_like(self.cb)
         t_to_ct = {}
-        t_idx = self.t_idx
-        for t in t_idx:
+
+        for t in self.tj_idx:
             c_at_t = self.c_at_t[t]
             logging.debug(f't={t}, c={c_at_t}')
             t_to_ct[t] = c_at_t
             # 这里的T是转置还是最长时间？？？
             list_t = list(range(1, t + 1))
+            list_t = self.matD.filter_t(list_t)
             D = self.matD.get_partial_D(list_t)
+
             item_1 = np.matmul(D.T, self.matH)
             item_1 = np.matmul(item_1, inv_r)
             item_2 = np.dot(self.matH.T, c_at_t)
@@ -101,7 +102,7 @@ class OptTarget:
         #### 计算目标函数
         item1 = quad_multiply(inv_b, c0_sub_cb) / 2
         item2 = 0
-        for t in t_idx:
+        for t in self.tj_idx:
             hct_sub_yt = np.dot(self.matH, t_to_ct[t]) - self.yt[t]
             tmp = quad_multiply(inv_r, hct_sub_yt)
             item2 += tmp

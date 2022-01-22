@@ -162,6 +162,13 @@ class DMatrix:
             D_mat = np.matmul(D_mat, self.t_to_D[t])
         return self.get_slice(D_mat)
 
+    def filter_t(self, list_t):
+        ans = []
+        for t in list_t:
+            if t in self.grid_t:
+                ans.append(t)
+        return ans
+
     def get_partial_D(self, list_t):
         """
         从list_t中获取对应时刻的Dt, 连乘起来，返回观测点index的子矩阵
