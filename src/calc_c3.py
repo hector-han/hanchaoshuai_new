@@ -1,11 +1,12 @@
 """
-计算C的解析解和数值解
+计算C的解析解，连续释放和瞬时释放混合
 """
 import numpy as np
 from scipy import integrate
-from mesh_grid import MeshGrid
 from ksxi import calc_sigmas
 
+# 需要手动修改这里，表示前几个源是瞬时释放，之后的是连续释放
+NN = 1
 
 def calc_sigma(point, loc_i, u, theta):
     x = point[0]
@@ -51,8 +52,6 @@ class AnalysisRes:
         c1 = coeff * np.exp(sum1)
         return c1
 
-    # def my_quad(self):
-
     def at(self, point, t):
         """
         :param point: 空间中的三维向量
@@ -62,12 +61,21 @@ class AnalysisRes:
         ret = 0
         n = len(self.Q)
         for i in range(n):
-            loc_i = self.location[i]
-            sigma_i = self.calc_sigma(point, loc_i, self.u, self.theta)
-            c1 = self._f(i, point, t, sigma_i)
+            if i < NN:
+                loc_i = self.location[i]
+                sigma_i = self.calc_sigma(point, loc_i, self.u, self.theta)
+                c1 = self._f(i, point, t, sigma_i)
+                ret += self.Q[i] * (c1) / np.prod(sigma_i) / np.power((2 * np.pi), 3 / 2)
+            else:
+                loc_i = self.location[i]
+                sigma_i = self.calc_sigma(point, loc_i, self.u, self.theta)
+                c1 = self._f(i, point, t, sigma_i)
 
-            def f(tao):
-                return self._f(i, point, tao, sigma_i, t - tao)
-            ret += self.Q[i] * (c1) / np.prod(sigma_i) / np.power((2 * np.pi), 3 / 2)
+                def f(tao):
+                    return self._f(i, point, tao, sigma_i)
+
+                c2, err = integrate.quad(f, 0, t)
+                # c2 = accum_sum(f, 1, t + 1)
+                ret += self.Q[i] * (c1 + c2) / np.prod(sigma_i) / np.power((2 * np.pi), 3 / 2)
 
         return ret

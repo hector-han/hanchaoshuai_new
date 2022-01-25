@@ -20,10 +20,12 @@ xy_lower = [-1000, -1000]
 xy_upper = [1000, 1000]
 # xy维度网格的个数
 xy_nums = [51, 51]
-# 时间维度网格, 1,2,3,...300
-grid_t = list(range(1, 301))
-# 观测时间
-t_idx = [60, 180, 300]
+# 时间维度网格, 100， 200， 300， ..., 3600
+grid_t = list(range(100, 3601, 100))
+# 计算B的三个时间
+tb_idx = [100, 200, 300]
+# 计算目标函数的多个时间，
+tj_idx = list(range(100, 3601, 200))
 # 源强最小值
 Q_min = 0
 # 源强最大值
@@ -52,7 +54,7 @@ def distance(point1, point2):
     return np.linalg.norm(point2 - point1)
 
 
-def compute_c(config: Config, obsrv_loc, yt):
+def compute_c(config: Config, obsrv_loc, yt2):
     """
     计算c的函数，对每一个点，每一个时刻，都计算。
     :param config:
@@ -60,9 +62,35 @@ def compute_c(config: Config, obsrv_loc, yt):
     :param yt:
     :return: dict
     """
+    obsrv_nums = len(obsrv_loc)
+
+    # 计算其他的时刻, 得到修正值。修正这里
+    know_Q = np.asarray([10, 10])
+    know_location = np.asarray([
+        [0, 0], [10, 10]
+    ])
+    know_grid_t = tj_idx
+    ########## 以上是需要修改的部分
+
+    ans = {}
+    c_solver2 = AnalysisRes(know_Q, know_location, config.u, config.theta, config.vd, config.I, config.l)
+    for t in know_grid_t:
+        tmp = [0] * obsrv_nums
+        for i in range(obsrv_nums):
+            loc = obsrv_loc[i]
+            tmp[i] = c_solver2.at(loc, t)
+        ans[t] = np.asarray(tmp)
+
+    mat_m_s = get_miu_sigam(obsrv_loc, yt2, ans)
+    t_len = len(tj_idx)
+    errors = []
+    for miu, sigma in mat_m_s:
+        res = np.random.lognormal(miu, sigma, [t_len])
+        errors.append(res)
+
+    # 这里已经从对数正太分布中抽取到误差，开始对C进行修正
     ans = {}
     # 计算 t = 0
-    obsrv_nums = len(obsrv_loc)
     tmp = [0] * obsrv_nums
     for i in range(obsrv_nums):
         for j, point in config.location:
@@ -71,24 +99,16 @@ def compute_c(config: Config, obsrv_loc, yt):
                 break
     ans[0] = np.asarray(tmp)
 
-    # 计算其他的时刻
     c_solver = AnalysisRes(config.Q, config.location, config.u, config.theta, config.vd, config.I, config.l)
-    for t in t_idx:
+    for t in tj_idx:
         tmp = [0] * obsrv_nums
         for i in range(obsrv_nums):
             loc = obsrv_loc[i]
             tmp[i] = c_solver.at(loc, t)
         ans[t] = np.asarray(tmp)
 
-    mat_m_s = get_miu_sigam(obsrv_loc, yt, ans)
-    t_len = len(t_idx)
-    errors = []
-    for miu, sigma in mat_m_s:
-        res = np.random.lognormal(miu, sigma, [t_len])
-        errors.append(res)
-
     # 修正下ans:
-    for ti, t in enumerate(t_idx):
+    for ti, t in enumerate(tj_idx):
         for j in range(obsrv_nums):
             eps = errors[j][ti]
             logging.info(f'误差={eps}')
@@ -97,7 +117,7 @@ def compute_c(config: Config, obsrv_loc, yt):
     return ans
 
 
-def assum_num_source(obsrv_loc, yt, nums=2):
+def assum_num_source(obsrv_loc, yt, yt2, nums=2):
     """
     有num个源，花朵授粉求最小
     :param nums: 源的个数
@@ -126,8 +146,8 @@ def assum_num_source(obsrv_loc, yt, nums=2):
         num_obsrv = obsrv_loc.shape[0]
         matR = np.eye(num_obsrv)
         cb = np.zeros(num_obsrv)
-        target_obj = OptTarget(config.mesh_grid, matR, obsrv_loc, yt, 300, t_idx, cb)
-        c_at_t = compute_c(config, obsrv_loc, yt)
+        target_obj = OptTarget(config.mesh_grid, matR, obsrv_loc, yt, tb_idx, tj_idx, cb)
+        c_at_t = compute_c(config, obsrv_loc, yt2)
         target_obj.reset(config, c_at_t)
         val, grad = target_obj.get_obj_and_grad()
         return [np.linalg.norm(grad), val]
@@ -142,10 +162,12 @@ def process():
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s [%(filename)s:%(lineno)d] %(levelname)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
-    station_fn = '../src/数据.xlsx'
-    guance_fn = '../src/观测数据.xlsx'
+    station_fn = '../data/2021-1/观测点坐标-1.xlsx'
+    guance_fn = '../data/2021-1/观测点数据-1.xlsx'
+    guance_fn2 = "../data/2021-1/观测点数据-1.xlsx"
     obsrv_loc, yt = build_data(station_fn, guance_fn)
-    assum_num_source(obsrv_loc, yt, nums=2)
+    _, yt2 = build_data(station_fn, guance_fn2)
+    assum_num_source(obsrv_loc, yt, yt2, nums=2)
 
 
 if __name__ == '__main__':

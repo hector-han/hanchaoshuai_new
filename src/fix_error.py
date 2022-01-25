@@ -16,8 +16,10 @@ def get_miu_sigam(obsrv_loc, yt: dict, c_at_t):
     :param c_func: 计算c的函数，输入（坐标，t）, 输出值
     :return:
     """
-    all_time = yt.keys()
-    all_time = sorted(all_time)
+    all_time = set(yt.keys())
+    all_time2 = set(c_at_t.keys())
+    all_time = all_time & all_time2
+    all_time = sorted(list(all_time))
 
     # 重新组织下观测数据， 按照时间排列
     new_yt = []
@@ -77,6 +79,8 @@ def get_miu_sigam(obsrv_loc, yt: dict, c_at_t):
                 miu = (good_u * bad_var + bad_u * good_var) / (good_var + bad_var)
                 sigma = np.sqrt(good_var * bad_var / (good_var + bad_var))
 
+        # miu = 0
+        # sigma = 1
         logging.info(f'miu={miu}, sigma={sigma}')
         miu = np.exp(miu + 0.5 * miu * miu)
         sigma = np.sqrt(miu * miu * (np.exp(sigma * sigma) - 1))

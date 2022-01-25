@@ -1,4 +1,4 @@
-from calc_c import AnalysisRes
+from calc_c3 import AnalysisRes
 import matplotlib.pyplot as plt
 import numpy as np
 import mpl_toolkits.mplot3d
